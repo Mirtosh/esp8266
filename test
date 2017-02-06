@@ -1,0 +1,114 @@
+
+#include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
+
+//needed for library
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
+#include <OneWire.h>
+#include <Base64.h>
+#include <DallasTemperature.h>
+
+#define REPORT_INTERVAL 900 // in sec
+
+#define ONE_WIRE_BUS 2  // DS18B20 pin
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature DS18B20(&oneWire);
+
+#define USER_PWD_LEN 40
+char unameenc[USER_PWD_LEN];
+float oldTemp;
+
+
+void setup() {
+    // put your setup code here, to run once:
+    Serial.begin(115200);
+
+    //WiFiManager
+    //Local intialization. Once its business is done, there is no need to keep it around
+    WiFiManager wifiManager;
+   
+    //reset saved settings
+    wifiManager.resetSettings();
+    
+    //set custom ip for portal
+    //wifiManager.setAPStaticIPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
+
+    //fetches ssid and pass from eeprom and tries to connect
+    //if it does not connect it starts an access point with the specified name
+    //here  "AutoConnectAP"
+    //and goes into a blocking loop awaiting configuration
+    wifiManager.autoConnect("AutoConnectAP");
+    //or use this for auto generated name ESP + ChipID
+    //wifiManager.autoConnect();
+
+ 
+    //if you get here you have connected to the WiFi
+    Serial.println("connected...yeey :)");
+
+ // char uname[USER_PWD_LEN];
+ // String str = String(EIOT_USERNAME)+":"+String(EIOT_PASSWORD);  
+ // str.toCharArray(uname, USER_PWD_LEN); 
+ // memset(unameenc,0,sizeof(unameenc));
+ // base64_encode(unameenc, uname, strlen(uname));
+ // oldTemp = -1;
+    
+}
+
+void loop() {
+    // put your main code here, to run repeatedly:
+      float temp;
+  
+  do {
+    DS18B20.requestTemperatures(); 
+    temp = DS18B20.getTempCByIndex(0);
+    Serial.print("Temperature: ");
+    Serial.println(temp);
+  } while (temp == 85.0 || temp == (-127.0));
+  
+//  if (temp != oldTemp)
+//  {
+//    sendTeperature(temp);
+//    oldTemp = temp;
+//  }
+  
+  int cnt = REPORT_INTERVAL;
+  
+  while(cnt--)
+    delay(1000);
+}
+
+//void sendTeperature(float temp)
+//{  
+//   WiFiClient client;
+//   
+//   while(!client.connect(EIOT_IP_ADDRESS, EIOT_PORT)) {
+//    Serial.println("connection failed");
+//    wifiConnect(); 
+//  }
+// 
+//  String url = "";
+//  url += "/Api/EasyIoT/Control/Module/Virtual/"+ String(EIOT_NODE) + "/ControlLevel/"+String(temp); // generate EasIoT server node URL
+//
+//  Serial.print("POST data to URL: ");
+//  Serial.println(url);
+//  
+//  client.print(String("POST ") + url + " HTTP/1.1\r\n" +
+//               "Host: " + String(EIOT_IP_ADDRESS) + "\r\n" + 
+//               "Connection: close\r\n" + 
+//               "Authorization: Basic " + unameenc + " \r\n" + 
+//               "Content-Length: 0\r\n" + 
+//               "\r\n");
+//
+//  delay(100);
+//    while(client.available()){
+//    String line = client.readStringUntil('\r');
+//    Serial.print(line);
+//  }
+//  
+//  Serial.println();
+//  Serial.println("Connection closed");
+//}
+
+
+
